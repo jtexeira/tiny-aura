@@ -48,7 +48,8 @@ auru() {
 
     echo $FINAL \
         | tr ' ' '\n' \
-        | column -ts'>' -N PKG,REMOTE,INSTALED
+        | sed -E 's/([^>]+)>([^>]+)>([^>]+)/\1>\3>\2/g' \
+        | column -ts'>' -N PKG,INSTALED,REMOTE
 }
 
 case $1 in
