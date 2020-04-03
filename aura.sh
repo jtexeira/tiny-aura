@@ -1,13 +1,16 @@
 #!/bin/bash
 
 aur() {
-	pushd /tmp >> /dev/null
-	git clone https://aur.archlinux.org/$1
-	cd $1
-	makepkg -si
-	cd ..
-	rm -rf $1
-	popd >> /dev/null
+    while true; do 
+	    pushd /tmp >> /dev/null
+	    git clone https://aur.archlinux.org/$1
+	    cd $1
+	    makepkg -si
+	    cd ..
+	    rm -rf $1
+	    popd >> /dev/null
+        shift
+    done
 }
 
 aurs() {
@@ -47,9 +50,21 @@ auru() {
     done;
 
     echo $FINAL \
-        | tr ' ' '\n' \
-        | sed -E 's/([^>]+)>([^>]+)>([^>]+)/\1>\3>\2/g' \
-        | column -ts'>' -N PKG,INSTALED,REMOTE
+       | tr ' ' '\n' \
+       | sed -E 's/([^>]+)>([^>]+)>([^>]+)/\1>\3>\2/g' \
+       | column -ts'>' -N PKG,INSTALED,REMOTE
+
+    echo Wanna Update?
+    local conf
+    read conf
+    case $conf in
+        y|yes)
+            aur `echo $FINAL | sed -E 's/([^>]+)>([^>]+)>([^ ]+)/\1/g'`
+            ;;
+        *)
+            echo Bye
+            ;;
+    esac
 }
 
 case $1 in
@@ -57,7 +72,8 @@ case $1 in
         sudo pacman -Rsn $2
         ;;
     -S)
-        aur $2
+        shift
+        aur "$@"
         ;;
     -Ss)
         aurs $2
