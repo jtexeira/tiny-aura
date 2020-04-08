@@ -1,7 +1,7 @@
 #!/bin/bash
 
 aur() {
-    while true; do 
+    while [ $# -gt 0 ]; do 
 	    pushd /tmp >> /dev/null
 	    git clone https://aur.archlinux.org/$1
 	    cd $1
