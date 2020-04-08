@@ -1,5 +1,7 @@
 #!/bin/bash
 
+shopt -s extglob
+
 aur() {
     while [ $# -gt 0 ]; do 
 	    pushd /tmp >> /dev/null
@@ -78,7 +80,7 @@ case $1 in
     -Ss)
         aurs $2
         ;;
-    -Syu|-Syyu)
+    -S+(y)u )
         auru
         ;;
 esac
