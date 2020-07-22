@@ -5,20 +5,20 @@ shopt -s extglob
 
 aur() {
     while [ $# -gt 0 ]; do
-	    pushd /tmp >> /dev/null || return
-	    git clone https://aur.archlinux.org/"$1"
-	    cd "$1" || return
+        pushd /tmp >> /dev/null || return
+        git clone https://aur.archlinux.org/"$1"
+        cd "$1" || return
         [ "$edit" ] && ${EDITOR:-vi} PKGBUILD
-	    makepkg -si --clean "${@:2}"
-	    cd ..
-	    rm -rf "$1"
-	    popd >> /dev/null || return
+        makepkg -si --clean "${@:2}"
+        cd ..
+        rm -rf "$1"
+        popd >> /dev/null || return
         shift
     done
 }
 
 aurs() {
-	curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$1" |
+    curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$1" |
         jq '.results[] | "\(.Name) -> \(.Description)"'
 }
 
