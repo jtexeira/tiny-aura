@@ -4,17 +4,19 @@
 shopt -s extglob
 
 aur() {
-    while [ $# -gt 0 ]; do
-        pushd /tmp >> /dev/null || return
+    pushd /tmp >> /dev/null || return
+    if [[ -d "$1" ]]; then
+        cd "$1" || return
+        git pull
+    else
         git clone https://aur.archlinux.org/"$1"
         cd "$1" || return
-        [ "$edit" ] && ${EDITOR:-vi} PKGBUILD
-        makepkg -si --clean "${@:2}"
-        cd ..
-        rm -rf "$1"
-        popd >> /dev/null || return
-        shift
-    done
+    fi
+    [ "$edit" ] && ${EDITOR:-vi} PKGBUILD
+    makepkg -si --clean "${@:2}"
+    cd ..
+    rm -rf "$1"
+    popd >> /dev/null || return
 }
 
 aurs() {
@@ -23,47 +25,47 @@ aurs() {
 }
 
 auru() {
-    local PACKAGES=$(pacman -Q)
-    local TOTAL=$(pacman -Q | wc -l)
-
-    for i in $(seq 0 200 "$TOTAL"); do
-        local UPDATES+=$(echo "$PACKAGES" \
-            | tr ' ' '\n' \
-            | tail -n $((TOTAL - i)) \
-            | head -n 200 \
-            | cut -d" " -f1 \
-            | tr '\n' ' ' \
-            | curl -s "https://aur.archlinux.org/rpc/?v=5&type=info$(sed -r 's/(\S*)\s/\&arg[]=\1/g')");
-    done;
-
-    local AURPKG=$(echo "$UPDATES" \
-                    | jq -M '.results[] | "\(.Name)"' \
-                    | tr -d '"')
-
-    for f in $AURPKG; do
-        local PKGVER+=("$(pacman -Qs "^$f\$" | cut -d" " -f2) ");
-    done;
-
-    local i=1
-    local UPS=$(echo "$UPDATES" \
-        | jq '.results[] | "\(.Name)>\(.Version)"' \
-        | tr -d '"')
-
-    for ver in "${PKGVER[@]}"; do
-        local FINAL+=("$(echo "$UPS" | cut -d" " -f$i)>$ver ")
-        i=$((i+1));
-    done;
-
-    echo "${FINAL[@]}" \
-       | tr ' ' '\n' \
-       | sed -E 's/([^>]+)>([^>]+)>([^>]+)/\1>\3>\2/g' \
-       | column -ts'>' -N PKG,INSTALED,REMOTE
-
-    local conf
-    read -r -p 'Wanna Update? ' conf
-    case $conf in
-        y|yes|Y|Yes)
-            aur "$(echo "${FINAL[@]}" | sed -E 's/([^>]+)>([^>]+)>([^ ]+)/\1/g')"
+    local other_args=()
+    local pkg_args
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            -*) other_args+=("$1") ;;
+            *) pkg_args="${pkg_args}&arg[]=$1" ;;
+        esac
+        shift
+    done
+    if [ -z "$pkg_args" ]; then
+        local pkg_args="&$(pacman -Qm |
+            cut -d' ' -f1 |
+            sed -r 's/(.*)/arg[]=\1/g' |
+            tr '\n' '&' |
+            sed -r 's/&$//g')"
+    fi
+    echo -n "Fetching info from aur"
+    local url="https://aur.archlinux.org/rpc/?v=5&type=info&by=name$pkg_args"
+    local AUR_JSON="$(curl --silent "$url" | jq .results)"
+    echo -en "\r\e[K"
+    echo -en "Compiling info"
+    local PACKAGES=("$(
+        pacman -Qm |
+            while read -r pkg version; do
+                {
+                    v="$(echo "$AUR_JSON" |
+                        jq --raw-output ".[] | select(.Name == \"$pkg\") | .Version")"
+                    [[ "$(echo -e "$v\n$version" | sort -V | tail -1)" != "$version" ]] &&
+                        echo "$pkg,$version,$v"
+                } &
+            done |
+            sort
+    )")
+    echo -en "\r\e[K"
+    echo "${PACKAGES[@]}" | column -ts',' -N PKG,INSTALED,REMOTE
+    read -r -p 'Wanna Update [N/y]? '
+    case $REPLY in
+        y | yes | Y | Yes)
+            for p in $(echo "${PACKAGES[@]}" | cut -d',' -f1 | tr '\n' ' '); do
+                aur "$p" "${other_args[@]}"
+            done
             ;;
         *)
             echo Bye
@@ -88,8 +90,10 @@ main() {
             aurs "$2"
             ;;
         -S+(y)u )
-            auru
+            auru "${@:2}"
             ;;
+        *)
+            main -S "$@"
     esac
 }
 
