@@ -84,7 +84,18 @@ main() {
             ;;
         -S)
             shift
-            aur "$@"
+            other_args=()
+            pkgs=()
+            while [ "$#" -gt 0 ]; do
+                case "$1" in
+                    -*) other_args+=("$1") ;;
+                    *) pkgs+=("$1") ;;
+                esac
+                shift
+            done
+            for p in "${pkgs[@]}"; do
+                aur "$p" "${other_args[@]}"
+            done
             ;;
         -Ss)
             aurs "$2"
