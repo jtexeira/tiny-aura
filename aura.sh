@@ -4,7 +4,7 @@
 shopt -s extglob
 
 aur() {
-    pushd /tmp >> /dev/null || return
+    pushd /tmp >>/dev/null || return
     if [[ -d "$1" ]]; then
         cd "$1" || return
         git pull
@@ -16,7 +16,7 @@ aur() {
     makepkg -si --clean "${@:2}"
     cd ..
     rm -rf "$1"
-    popd >> /dev/null || return
+    popd >>/dev/null || return
 }
 
 aurs() {
@@ -46,7 +46,8 @@ auru() {
     local AUR_JSON="$(curl --silent "$url" | jq .results)"
     echo -en "\r\e[K"
     echo -en "Compiling info"
-    local PACKAGES=("$(
+    local PACKAGES
+    mapfile -t PACKAGES < <(
         pacman -Qm |
             while read -r pkg version; do
                 {
@@ -57,13 +58,14 @@ auru() {
                 } &
             done |
             sort
-    )")
+    )
     echo -en "\r\e[K"
-    echo "${PACKAGES[@]}" | column -ts',' -N PKG,INSTALED,REMOTE
+    [[ "${#PACKAGES[@]}" -lt 1 ]] && echo "no packages to upgrade" && return
+    printf '%s\n' "${PACKAGES[@]}" | column -ts',' -N PKG,INSTALED,REMOTE
     read -r -p 'Wanna Update [N/y]? '
     case $REPLY in
         y | yes | Y | Yes)
-            for p in $(echo "${PACKAGES[@]}" | cut -d',' -f1 | tr '\n' ' '); do
+            for p in $(printf '%s\n' "${PACKAGES[@]}" | cut -d',' -f1); do
                 aur "$p" "${other_args[@]}"
             done
             ;;
@@ -100,11 +102,12 @@ main() {
         -Ss)
             aurs "$2"
             ;;
-        -S+(y)u )
+        -S+(y)u)
             auru "${@:2}"
             ;;
         *)
             main -S "$@"
+            ;;
     esac
 }
 
