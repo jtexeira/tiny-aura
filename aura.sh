@@ -75,6 +75,14 @@ auru() {
     esac
 }
 
+self_update() {
+    git clone https://github.com/jtexeira/tiny-aura.git /tmp/tiny-aura
+    cd /tmp/tiny-aura || return 1
+    sudo make
+    cd || return 1
+    rm -rf /tmp/tiny-aura
+}
+
 main() {
     case $1 in
         -e)
@@ -104,6 +112,9 @@ main() {
             ;;
         -S+(y)u)
             auru "${@:2}"
+            ;;
+        update)
+            self_update
             ;;
         *)
             main -S "$@"
