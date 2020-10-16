@@ -119,7 +119,7 @@ main() {
             self_update
             ;;
         -v | --version)
-            echo "$0 version $VERSION"
+            echo "$0: $VERSION"
             ;;
         *)
             main -S "$@"
