@@ -1,6 +1,8 @@
 #!/bin/bash
 #shellcheck disable=2155
 
+readonly VERSION=1.0
+
 shopt -s extglob
 
 aur() {
@@ -115,6 +117,9 @@ main() {
             ;;
         update)
             self_update
+            ;;
+        -v | --version)
+            echo "$0 version $VERSION"
             ;;
         *)
             main -S "$@"
