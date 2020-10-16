@@ -78,11 +78,18 @@ auru() {
 }
 
 self_update() {
-    git clone https://github.com/jtexeira/tiny-aura.git /tmp/tiny-aura
-    cd /tmp/tiny-aura || return 1
-    sudo make
-    cd || return 1
-    rm -rf /tmp/tiny-aura
+    v="$(curl -s https://raw.githubusercontent.com/jtexeira/tiny-aura/master/aura.sh |
+        grep -m 1 'readonly VERSION=' |
+        cut -d'=' -f2)"
+    if [[ $v != "$VERSION" ]]; then
+        git clone https://github.com/jtexeira/tiny-aura.git /tmp/tiny-aura
+        cd /tmp/tiny-aura || return 1
+        sudo make
+        cd || return 1
+        rm -rf /tmp/tiny-aura
+    else
+        echo "already up to date"
+    fi
 }
 
 main() {
