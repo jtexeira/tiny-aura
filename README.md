@@ -5,6 +5,6 @@ bash with similar usage to pacman
 
 To install just run:
 ```
-sudo make
+make
 ```
 And the aura executable will be added to your path
