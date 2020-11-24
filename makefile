@@ -1,4 +1,4 @@
 EXEC= aura
 install:
-	cp aura.sh /usr/local/bin/$(EXEC)
-	chmod +x /usr/local/bin/$(EXEC)
+	cp aura.sh "$HOME"/.local/bin/$(EXEC)
+	chmod +x "$HOME"/.local/bin/$(EXEC)
