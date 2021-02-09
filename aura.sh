@@ -16,6 +16,12 @@ aur() {
     fi
     [ "$edit" ] && ${EDITOR:-vi} PKGBUILD
     makepkg -si --clean "${@:2}"
+    (
+        #shellcheck disable=1091
+        . PKGBUILD
+        #shellcheck disable=2154
+        sudo pacman -Rsn "${makedepends[@]}" "${checkdepends[@]}"
+    )
     cd ..
     rm -rf "$1"
     popd >>/dev/null || return
