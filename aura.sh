@@ -1,7 +1,7 @@
 #!/bin/bash
 #shellcheck disable=2155
 
-readonly VERSION=1.0
+readonly VERSION=1.1
 
 shopt -s extglob
 
