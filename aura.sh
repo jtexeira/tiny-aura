@@ -1,7 +1,7 @@
 #!/bin/bash
 #shellcheck disable=2155
 
-readonly VERSION=1.1
+readonly VERSION=1.3
 
 shopt -s extglob
 
@@ -20,7 +20,9 @@ aur() {
         #shellcheck disable=1091
         . PKGBUILD
         #shellcheck disable=2154
-        sudo pacman -Rsn "${makedepends[@]}" "${checkdepends[@]}"
+        [[ "$((${#makedepends[@]} + ${#checkdepends[@]}))" -gt 0 ]] &&
+            echo -e "===> \e[31;1mREMOVE MAKE DEPENDENCIES?\e[0m" &&
+            sudo pacman -Rsn "${makedepends[@]}" "${checkdepends[@]}"
     )
     cd ..
     rm -rf "$1"
@@ -29,7 +31,17 @@ aur() {
 
 aurs() {
     curl -s "https://aur.archlinux.org/rpc/?v=5&type=search&by=name&arg=$1" |
-        jq '.results[] | "\(.Name) -> \(.Description)"'
+        jq -r '.results[] | "\(.Name) \(.Version) \(.Description)"' |
+        awk '{
+            name=$1; $1="";
+            v=$2; $2="";
+            print "\033[35;1maur/\033[37m" name " \033[32m" v "\033[0m\n   " $0
+        }'
+}
+
+auri() {
+    curl -s "https://aur.archlinux.org/rpc/?v=5&type=info&arg[]=$1" |
+        jq -r '.results[0]'
 }
 
 auru() {
@@ -121,6 +133,9 @@ main() {
             for p in "${pkgs[@]}"; do
                 aur "$p" "${other_args[@]}"
             done
+            ;;
+        -Si)
+            auri "${@:2}"
             ;;
         -Ss)
             aurs "$2"
