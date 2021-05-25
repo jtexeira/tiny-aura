@@ -1,7 +1,7 @@
 #!/bin/bash
 #shellcheck disable=2155
 
-readonly VERSION=1.3
+readonly VERSION=1.4
 
 shopt -s extglob
 
@@ -15,14 +15,20 @@ aur() {
         cd "$1" || return
     fi
     [ "$edit" ] && ${EDITOR:-vi} PKGBUILD
-    makepkg -si --clean "${@:2}"
     (
         #shellcheck disable=1091
         . PKGBUILD
+        export makedepends checkdepends
+        mapfile -t makedependencies < <(
+            for p in "${makedepends[@]}" "${checkdepends[@]}"; do
+                pacman -Q "$p" &>/dev/null || echo "$p"
+            done
+        )
+        makepkg -si --clean "${@:2}"
         #shellcheck disable=2154
-        [[ "$((${#makedepends[@]} + ${#checkdepends[@]}))" -gt 0 ]] &&
+        [[ "${#makedependencies[@]}" -gt 0 ]] &&
             echo -e "===> \e[31;1mREMOVE MAKE DEPENDENCIES?\e[0m" &&
-            sudo pacman -Rsn "${makedepends[@]}" "${checkdepends[@]}"
+            sudo pacman -Rsn "${makedependencies[@]}"
     )
     cd ..
     rm -rf "$1"
