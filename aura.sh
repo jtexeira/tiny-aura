@@ -1,7 +1,7 @@
 #!/bin/bash
 #shellcheck disable=2155
 
-readonly VERSION=1.5
+readonly VERSION=1.6
 
 shopt -s extglob
 
@@ -109,11 +109,13 @@ self_update() {
         grep -m 1 'readonly VERSION=' |
         cut -d'=' -f2)"
     if [[ $v != "$VERSION" ]]; then
-        git clone https://github.com/jtexeira/tiny-aura.git /tmp/tiny-aura
-        cd /tmp/tiny-aura || return 1
-        sudo make
-        cd || return 1
-        rm -rf /tmp/tiny-aura
+        exec bash -c "
+            git clone https://github.com/jtexeira/tiny-aura.git /tmp/tiny-aura
+            cd /tmp/tiny-aura || return 1
+            sudo make
+            cd || return 1
+            rm -rf /tmp/tiny-aura
+        "
     else
         echo "already up to date"
     fi
