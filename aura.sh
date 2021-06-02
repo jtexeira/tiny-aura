@@ -1,12 +1,14 @@
 #!/bin/bash
 #shellcheck disable=2155
 
-readonly VERSION=1.4
+readonly VERSION=1.5
 
 shopt -s extglob
 
 aur() {
-    pushd /tmp >>/dev/null || return
+    tmp="${TMPDIR:-/tmp}"
+    mkdir -p "$tmp"
+    pushd "$tmp" >>/dev/null || return
     if [[ -d "$1" ]]; then
         cd "$1" || return
         git pull
@@ -33,6 +35,7 @@ aur() {
     cd ..
     rm -rf "$1"
     popd >>/dev/null || return
+    if [[ "$tmp" != /tmp ]]; then rmdir "$tmp" 2>/dev/null ; fi
 }
 
 aurs() {
