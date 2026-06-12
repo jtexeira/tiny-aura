@@ -1,7 +1,7 @@
 #!/bin/bash
 #shellcheck disable=2155
 
-readonly VERSION=1.6
+readonly VERSION=2.0
 
 shopt -s extglob
 
@@ -16,7 +16,24 @@ aur() {
         git clone https://aur.archlinux.org/"$1"
         cd "$1" || return
     fi
-    [ "$edit" ] && ${EDITOR:-vi} PKGBUILD
+    if [ "$edit" ]; then
+        ${EDITOR:-vi} PKGBUILD
+    else
+        read -r -p "Review PKGBUILD? [Y/n] "
+        case "$REPLY" in
+            n|N) ;;
+            y|Y|'')
+                at=$(command -v bat &>/dev/null && echo bat || echo cat)
+                $at PKGBUILD
+                read -r -p "Install? [Y/n] "
+                [[ "$REPLY" =~ N|n ]] && return
+                ;;
+            *)
+                echo "aborting install"
+                exit 0
+                ;;
+    esac
+    fi
     (
         #shellcheck disable=1091
         . PKGBUILD
